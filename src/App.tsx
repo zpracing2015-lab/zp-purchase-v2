@@ -76,7 +76,7 @@ export default function App() {
   useEffect(() => {
     if (!user) return;
     
-    const ordersRef = collection(db, 'artifacts', appId, 'users', user.uid, 'orders');
+    const ordersRef = collection(db, 'zp_all_orders');
     const unsubscribe = onSnapshot(ordersRef, (snapshot) => {
       const fetchedOrders: any[] = [];
       snapshot.forEach((doc) => {
@@ -156,7 +156,7 @@ export default function App() {
     const orderData = { id: newId, ...newOrder };
     
     try {
-      await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'orders', newId.toString()), orderData);
+      await setDoc(doc(db, 'zp_all_orders', newId.toString()), orderData);
       setShowAddModal(false);
       setNewOrder(initialOrderState);
     } catch (error) {
@@ -168,7 +168,7 @@ export default function App() {
     if (!user) return;
     if (window.confirm('คุณต้องการลบรายการนี้ใช่หรือไม่?')) {
       try {
-        await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'orders', id.toString()));
+        await deleteDoc(doc(db, 'zp_all_orders', id.toString()));
         setSelectedOrders(selectedOrders.filter(orderId => orderId !== id));
       } catch (error) {
         console.error("Error deleting data:", error);
@@ -198,7 +198,7 @@ export default function App() {
     e.preventDefault();
     if (!user) return;
     try {
-      await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'orders', editingOrder.id.toString()), editingOrder);
+      await setDoc(doc(db, 'zp_all_orders', editingOrder.id.toString()), editingOrder);
       setShowEditModal(false);
       setEditingOrder(null);
     } catch (error) {
@@ -261,7 +261,7 @@ export default function App() {
       const newOrdersList = Array.from(orderMap.values());
       if (newOrdersList.length > 0 && user) {
         newOrdersList.forEach(async (order) => {
-          try { await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'orders', order.id.toString()), order); } 
+          try { await setDoc(doc(db, 'zp_all_orders', order.id.toString()), order); } 
           catch (error) { console.error("Error importing data:", error); }
         });
         alert(`เริ่มนำเข้าข้อมูลจัดกลุ่มได้ ${newOrdersList.length} รายการสั่งซื้อ`);
