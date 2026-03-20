@@ -75,7 +75,8 @@ export default function App() {
   useEffect(() => {
     if (!user) return;
     
-    const ordersRef = collection(db, 'artifacts', appId, 'users', user.uid, 'orders');
+    // ✅ ดึงข้อมูลจากฐานข้อมูลส่วนกลางชื่อ zp_all_orders
+    const ordersRef = collection(db, 'zp_all_orders');
     const unsubscribe = onSnapshot(ordersRef, (snapshot) => {
       const fetchedOrders: any[] = [];
       snapshot.forEach((doc) => {
@@ -155,7 +156,8 @@ export default function App() {
     const orderData = { id: newId, ...newOrder };
     
     try {
-      await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'orders', newId.toString()), orderData);
+      // ✅ บันทึกลงฐานข้อมูลส่วนกลาง
+      await setDoc(doc(db, 'zp_all_orders', newId.toString()), orderData);
       setShowAddModal(false);
       setNewOrder(initialOrderState);
     } catch (error) {
@@ -167,7 +169,8 @@ export default function App() {
     if (!user) return;
     if (window.confirm('คุณต้องการลบรายการนี้ใช่หรือไม่?')) {
       try {
-        await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'orders', id.toString()));
+        // ✅ ลบจากฐานข้อมูลส่วนกลาง
+        await deleteDoc(doc(db, 'zp_all_orders', id.toString()));
         setSelectedOrders(selectedOrders.filter(orderId => orderId !== id));
       } catch (error) {
         console.error("Error deleting data:", error);
@@ -197,7 +200,8 @@ export default function App() {
     e.preventDefault();
     if (!user) return;
     try {
-      await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'orders', editingOrder.id.toString()), editingOrder);
+      // ✅ อัปเดตฐานข้อมูลส่วนกลาง
+      await setDoc(doc(db, 'zp_all_orders', editingOrder.id.toString()), editingOrder);
       setShowEditModal(false);
       setEditingOrder(null);
     } catch (error) {
@@ -260,7 +264,10 @@ export default function App() {
       const newOrdersList = Array.from(orderMap.values());
       if (newOrdersList.length > 0 && user) {
         newOrdersList.forEach(async (order) => {
-          try { await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'orders', order.id.toString()), order); } 
+          try { 
+            // ✅ บันทึก Import ลงฐานข้อมูลส่วนกลาง
+            await setDoc(doc(db, 'zp_all_orders', order.id.toString()), order); 
+          } 
           catch (error) { console.error("Error importing data:", error); }
         });
         alert(`เริ่มนำเข้าข้อมูลจัดกลุ่มได้ ${newOrdersList.length} รายการสั่งซื้อ`);
@@ -580,19 +587,15 @@ export default function App() {
         )}
       </main>
 
-{/* Modal เพิ่มข้อมูล */}
-{showAddModal && (
+      {/* Modal เพิ่มข้อมูล */}
+      {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-gray-800/75 transition-opacity">
           <div className="relative w-full max-w-4xl max-h-[95vh] flex flex-col bg-white rounded-xl shadow-2xl overflow-hidden">
-            
-            {/* Header (ส่วนหัว Fixed ไม่เลื่อนตาม) */}
             <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-white shrink-0">
               <h3 className="text-xl font-bold text-gray-900">สร้างใบสั่งซื้อใหม่</h3>
               <button type="button" onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
             </div>
-
             <form onSubmit={handleAddOrder} className="flex flex-col flex-1 overflow-hidden">
-              {/* Body (ส่วนเนื้อหาตรงกลางที่ Scroll เลื่อนขึ้นลงได้) */}
               <div className="px-6 py-6 overflow-y-auto flex-1 bg-gray-50/50">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
                   <div><label className="block text-xs font-semibold text-gray-700 uppercase">PO Number</label><input type="text" required value={newOrder.poNumber} onChange={e => setNewOrder({...newOrder, poNumber: e.target.value})} className="mt-1 block w-full border-gray-300 border p-2 rounded-md bg-white shadow-sm focus:ring-blue-500 focus:border-blue-500" /></div>
@@ -621,8 +624,6 @@ export default function App() {
                   ))}
                 </div>
               </div>
-
-              {/* Footer (ส่วนปุ่ม Fixed ติดขอบล่างเสมอ) */}
               <div className="px-6 py-4 border-t border-gray-200 bg-white flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-3 sm:space-x-reverse shrink-0">
                 <button type="button" onClick={() => setShowAddModal(false)} className="mt-3 sm:mt-0 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-6 py-2.5 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:w-auto">ยกเลิก</button>
                 <button type="submit" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-6 py-2.5 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:w-auto">บันทึกข้อมูลใบสั่งซื้อ</button>
@@ -632,19 +633,15 @@ export default function App() {
         </div>
       )}
 
-      {/* Modal แก้ไขข้อมูล (ใช้โครงสร้างแบบเดียวกัน) */}
+      {/* Modal แก้ไขข้อมูล */}
       {showEditModal && editingOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-gray-800/75 transition-opacity">
           <div className="relative w-full max-w-4xl max-h-[95vh] flex flex-col bg-white rounded-xl shadow-2xl overflow-hidden">
-            
-            {/* Header */}
             <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-white shrink-0">
               <h3 className="text-xl font-bold text-gray-900">แก้ไขใบสั่งซื้อ</h3>
               <button type="button" onClick={() => setShowEditModal(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
             </div>
-
             <form onSubmit={handleUpdateOrder} className="flex flex-col flex-1 overflow-hidden">
-              {/* Body */}
               <div className="px-6 py-6 overflow-y-auto flex-1 bg-gray-50/50">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
                   <div><label className="block text-xs font-semibold text-gray-700 uppercase">PO Number</label><input type="text" required value={editingOrder.poNumber} onChange={e => setEditingOrder({...editingOrder, poNumber: e.target.value})} className="mt-1 block w-full border-gray-300 border p-2 rounded-md bg-white shadow-sm focus:ring-blue-500 focus:border-blue-500" /></div>
@@ -673,8 +670,6 @@ export default function App() {
                   ))}
                 </div>
               </div>
-
-              {/* Footer */}
               <div className="px-6 py-4 border-t border-gray-200 bg-white flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-3 sm:space-x-reverse shrink-0">
                 <button type="button" onClick={() => setShowEditModal(false)} className="mt-3 sm:mt-0 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-6 py-2.5 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:w-auto">ยกเลิก</button>
                 <button type="submit" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-6 py-2.5 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:w-auto">บันทึกการแก้ไข</button>
