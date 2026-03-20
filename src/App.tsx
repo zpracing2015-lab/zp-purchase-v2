@@ -30,7 +30,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const appId = 'zp-purchase-app';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('orders');
