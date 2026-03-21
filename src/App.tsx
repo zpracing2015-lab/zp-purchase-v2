@@ -18,13 +18,12 @@ import {
 // 🔴 จุดสำคัญ: ใส่ Config Firebase ของคุณที่นี่
 // ==========================================
 const firebaseConfig = {
-  apiKey: "AIzaSyDdJTmCGUoqBIKi3BM2UJuzgWT-7GlGu5Y",
-  authDomain: "zp-purchase.firebaseapp.com",
-  projectId: "zp-purchase",
-  storageBucket: "zp-purchase.firebasestorage.app",
-  messagingSenderId: "75480023563",
-  appId: "1:75480023563:web:2f523f34fdf67ea697fd0e",
-  measurementId: "G-FQ7D2WN0CZ"
+  // apiKey: "AIzaSy...",
+  // authDomain: "zp-purchase.firebaseapp.com",
+  // projectId: "zp-purchase",
+  // storageBucket: "zp-purchase.appspot.com",
+  // messagingSenderId: "...",
+  // appId: "..."
 };
 
 const app = initializeApp(firebaseConfig);
@@ -156,7 +155,6 @@ export default function App() {
     const orderData = { id: newId, ...newOrder };
     
     try {
-      // ✅ บันทึกลงฐานข้อมูลส่วนกลาง
       await setDoc(doc(db, 'zp_all_orders', newId.toString()), orderData);
       setShowAddModal(false);
       setNewOrder(initialOrderState);
@@ -169,11 +167,28 @@ export default function App() {
     if (!user) return;
     if (window.confirm('คุณต้องการลบรายการนี้ใช่หรือไม่?')) {
       try {
-        // ✅ ลบจากฐานข้อมูลส่วนกลาง
         await deleteDoc(doc(db, 'zp_all_orders', id.toString()));
         setSelectedOrders(selectedOrders.filter(orderId => orderId !== id));
       } catch (error) {
         console.error("Error deleting data:", error);
+      }
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!user) return;
+    if (selectedOrders.length === 0) return;
+    
+    if (window.confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบรายการที่เลือกจำนวน ${selectedOrders.length} รายการ?\n(การกระทำนี้ไม่สามารถกู้คืนได้)`)) {
+      try {
+        const deletePromises = selectedOrders.map(id => 
+          deleteDoc(doc(db, 'zp_all_orders', id.toString()))
+        );
+        await Promise.all(deletePromises);
+        setSelectedOrders([]);
+      } catch (error) {
+        console.error("Error bulk deleting data:", error);
+        alert("เกิดข้อผิดพลาดในการลบข้อมูล กรุณาลองใหม่อีกครั้ง");
       }
     }
   };
@@ -200,7 +215,6 @@ export default function App() {
     e.preventDefault();
     if (!user) return;
     try {
-      // ✅ อัปเดตฐานข้อมูลส่วนกลาง
       await setDoc(doc(db, 'zp_all_orders', editingOrder.id.toString()), editingOrder);
       setShowEditModal(false);
       setEditingOrder(null);
@@ -265,7 +279,6 @@ export default function App() {
       if (newOrdersList.length > 0 && user) {
         newOrdersList.forEach(async (order) => {
           try { 
-            // ✅ บันทึก Import ลงฐานข้อมูลส่วนกลาง
             await setDoc(doc(db, 'zp_all_orders', order.id.toString()), order); 
           } 
           catch (error) { console.error("Error importing data:", error); }
@@ -405,14 +418,33 @@ export default function App() {
                 <button onClick={() => setShowAddModal(true)} className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
                   <Plus className="w-4 h-4 mr-2" /> เพิ่มใบสั่งซื้อ
                 </button>
+
+                <button
+                  onClick={handleBulkDelete}
+                  disabled={selectedOrders.length === 0}
+                  className={`inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md shadow-sm transition-all duration-200 ${
+                    selectedOrders.length > 0 
+                      ? 'border-red-600 text-white bg-red-600 hover:bg-red-700' 
+                      : 'border-gray-300 text-gray-400 bg-gray-50 cursor-not-allowed'
+                  }`}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" /> 
+                  ลบรายการที่เลือก {selectedOrders.length > 0 && `(${selectedOrders.length})`}
+                </button>
+
                 <button
                   onClick={exportOrdersToCSV}
                   disabled={selectedOrders.length === 0}
-                  className={`inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md shadow-sm ${selectedOrders.length > 0 ? 'border-green-600 text-green-600 bg-white hover:bg-green-50' : 'border-gray-300 text-gray-400 bg-gray-50 cursor-not-allowed'}`}
+                  className={`inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md shadow-sm transition-all duration-200 ${
+                    selectedOrders.length > 0 
+                      ? 'border-green-600 text-green-600 bg-white hover:bg-green-50' 
+                      : 'border-gray-300 text-gray-400 bg-gray-50 cursor-not-allowed'
+                  }`}
                 >
                   <FileSpreadsheet className="w-4 h-4 mr-2" /> 
-                  Export ไป Google Sheet ({selectedOrders.length})
+                  Export {selectedOrders.length > 0 && `(${selectedOrders.length})`}
                 </button>
+
               </div>
             </div>
             
